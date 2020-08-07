@@ -15,7 +15,14 @@ git commit -m "First Commit" //备注本次提交的目的
 git push
 ```
 
- 
+```
+git status : 查看本地仓库状态
+git add <filename> : 添加文件到暂存区
+git add .  : 添加所有修改文件到暂存区
+git commit -m "提交说明" ： 提交到本地分支
+git pull : 拉取代码
+git push : 提交代码 
+```
 
  
 
