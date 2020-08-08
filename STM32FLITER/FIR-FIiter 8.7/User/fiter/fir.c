@@ -6,17 +6,17 @@
 #include "arm_math.h"
 
 
-#define TEST_LENGTH_SAMPLES  542  //512+30     /* 采样点数 */ 强行加了一个周期的数据，以解决
+//#define TEST_LENGTH_SAMPLES  542  //512+30     /* 采样点数 */ 强行加了一个周期的数据，以解决
 #define BLOCK_SIZE           1     /* 调用一次arm_fir_f32处理的采样点个数 */
 #define NUM_TAPS             30     /* 滤波器系数个数 */
  
 
  
 uint32_t blockSize = BLOCK_SIZE;
-uint32_t numBlocks = TEST_LENGTH_SAMPLES/BLOCK_SIZE;            /* 需要调用arm_fir_f32的次数 */
+//uint32_t numBlocks = TEST_LENGTH_SAMPLES/BLOCK_SIZE;            /* 需要调用arm_fir_f32的次数 */
 char floatTOchar [10] = ""; 
 
-static float32_t testOutput[TEST_LENGTH_SAMPLES];               /* 滤波后的输出 */
+static float32_t testOutput;               /* 滤波后的输出 */
 static float32_t firStateF32[BLOCK_SIZE + NUM_TAPS - 1];        /* 状态缓存，大小numTaps + blockSize - 1*/
 static float32_t cun[(NUM_TAPS/2)+1];       												//先前的误差存储
 static float32_t nums[(NUM_TAPS/2)+1];       												//先前的num存储
@@ -61,11 +61,11 @@ void arm_fir_f32_lp(float32_t num,int i)
 {
 	/* 初始化输入输出缓存指针 */
 	inputF32 = &num; //赋予原始数据的初始指针
-	outputF32 = &testOutput[0];
+	outputF32 = &testOutput;
 
 		
 	/* 实现一位的FIR滤波 */ 
-	arm_fir_f32(&S, inputF32, outputF32+i , blockSize);
+	arm_fir_f32(&S, inputF32, outputF32, blockSize);
 	
 	
 	//获取采样误差值
@@ -77,12 +77,14 @@ void arm_fir_f32_lp(float32_t num,int i)
 			error = num - cun[count];   // num为当前的原始数据 error为原始数据减去滤完数据的差值
 			
 			//这里添加串口通信发送原始数据num 与 差值error
+			//printf("%.3f \r\n",num - 230);
+			printf("%.3f \r\n",error);
 			
 			
 		}else{
 			nums[count] = num;
 		}
-			cun[count] = *(outputF32+i);		
+			cun[count] = *(outputF32);		
 	}
 }
 
