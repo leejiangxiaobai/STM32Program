@@ -18,8 +18,9 @@ char floatTOchar [10] = "";
 
 static float32_t testOutput[TEST_LENGTH_SAMPLES];               /* 滤波后的输出 */
 static float32_t firStateF32[BLOCK_SIZE + NUM_TAPS - 1];        /* 状态缓存，大小numTaps + blockSize - 1*/
-static float32_t error[(NUM_TAPS/2)+1];       												//先前的误差存储
+static float32_t cun[(NUM_TAPS/2)+1];       												//先前的误差存储
 static float32_t nums[(NUM_TAPS/2)+1];       												//先前的num存储
+static float32_t error;																							//原始值 减去 滤波后的误差
 int count ;                                                        //求解误差时的计数
 
 static float32_t  *inputF32, *outputF32;
@@ -58,56 +59,30 @@ arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32LP[0], &firStateF32[0], 
 }
 void arm_fir_f32_lp(float32_t num,int i)
 {
-/* 初始化输入输出缓存指针 */
-inputF32 = &num; //赋予原始数据的初始指针
-outputF32 = &testOutput[0];
+	/* 初始化输入输出缓存指针 */
+	inputF32 = &num; //赋予原始数据的初始指针
+	outputF32 = &testOutput[0];
 
-	
-/* 实现一位的FIR滤波 */ 
-arm_fir_f32(&S, inputF32, outputF32+i , blockSize);
+		
+	/* 实现一位的FIR滤波 */ 
+	arm_fir_f32(&S, inputF32, outputF32+i , blockSize);
 	
 	
 	//获取采样误差值
-	if(i >= 30 && i<TEST_LENGTH_SAMPLES-1){
+	if(i >= 30 ){     //去掉滤完的前30个数
+		
 		count = i%15;
-		if(i >= 45){
-			printf("%f \r\n", num - error[count]);
+		if(i >= 45){   	//从第45个开始进行串口通信
+			
+			error = num - cun[count];   // num为当前的原始数据 error为原始数据减去滤完数据的差值
+			
+			//这里添加串口通信发送原始数据num 与 差值error
+			
+			
 		}else{
 			nums[count] = num;
 		}
-		error[count] = *(outputF32+i);
-		
-	}else if(i == TEST_LENGTH_SAMPLES - 1){
-		//最后一个数的误差
-		count = i%15;
-		printf("%f \r\n", num - error[count]);
-		
-		for(int i = 0;i < 15;i++){
-				if(count+i >=15){
-					printf("%f \r\n", nums[i] - error[count+i-15]);
-				}else{
-					printf("%f \r\n", nums[i] - error[count+i]);
-				}
-		}
-	}	
+			cun[count] = *(outputF32+i);		
+	}
 }
 
-void arm_fir_printf(void){
-	int i;
-	/* 打印滤波后结果 */
-for(i = TEST_LENGTH_SAMPLES - NUM_TAPS/2; i< TEST_LENGTH_SAMPLES; i++)
-{
-		sprintf(floatTOchar,"%.4f",testOutput[i]);
-  	Usart_SendStr(DEBUG_USARTx,floatTOchar);
-	  Usart_SendStr(DEBUG_USARTx,"\n");
-    //printf("%f \r\n", testOutput[i]); //testInput_f32_50Hz_200Hz testOutput
-}
-/* 打印滤波后结果 */
-for(i = NUM_TAPS ; i<TEST_LENGTH_SAMPLES - NUM_TAPS/2; i++) 
-{
-		sprintf(floatTOchar,"%.4f",testOutput[i]);
-  	Usart_SendStr(DEBUG_USARTx,floatTOchar);
-	  Usart_SendStr(DEBUG_USARTx,"\n");
-    //printf("%f \r\n", testOutput[i]); //testInput_f32_50Hz_200Hz testOutput
-}
-}

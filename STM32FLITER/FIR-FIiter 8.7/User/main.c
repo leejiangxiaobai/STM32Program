@@ -571,11 +571,13 @@ int main(void)
 	USART_Config();
 	
 	//滤波初始化
+	
 	arm_fir_initialize ();
 	for(int i = 0;i< 542;i++){		
 	
 		  arm_fir_f32_lp(testInput_f32_50Hz_200Hz[i],i);
 	}
+	
 	//完成最后的打印
 	//arm_fir_printf();
 }
